@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Slider from 'react-slick';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
@@ -10,13 +10,74 @@ import Cookies from 'js-cookie';
 
 function Item(props) {
 
-    const item = props["item"];
+    const parseJsonField = (value, fallback) => {
+        if (value == null) return fallback;
+        if (typeof value === "string") {
+            try {
+                return JSON.parse(value);
+            } catch (error) {
+                return fallback;
+            }
+        }
+        return value;
+    };
+
+    const storageOrder = ['64 ГБ', '128 ГБ', '256 ГБ', '512 ГБ', '1 ТБ', '2 ТБ'];
+    const rawItem = props["item"] || {};
+    const item = useMemo(() => {
+        const parsedStorage = parseJsonField(rawItem["storage"], null);
+        let orderedStorage = parsedStorage;
+
+        if (parsedStorage != null && typeof parsedStorage === "object" && !Array.isArray(parsedStorage)) {
+            orderedStorage = storageOrder.reduce((acc, key) => {
+                if (Object.prototype.hasOwnProperty.call(parsedStorage, key)) {
+                    acc[key] = parsedStorage[key];
+                }
+                return acc;
+            }, {});
+        }
+
+        return {
+            ...rawItem,
+            storage: orderedStorage,
+            color: parseJsonField(rawItem["color"], null),
+            prices: parseJsonField(rawItem["prices"], null),
+            static_img: parseJsonField(rawItem["static_img"], null),
+        };
+    }, [rawItem]);
+
+    const getFirstImage = () => {
+        if (Array.isArray(item["static_img"]) && item["static_img"].length > 0) {
+            return item["static_img"][0];
+        }
+
+        if (item["color"] && typeof item["color"] === "object") {
+            const colorValues = Object.values(item["color"]);
+            for (const colorValue of colorValues) {
+                if (Array.isArray(colorValue) && colorValue.length > 0) {
+                    return colorValue[0];
+                }
+            }
+        }
+
+        if (item["storage"] && typeof item["storage"] === "object") {
+            const storageValues = Object.values(item["storage"]);
+            for (const storageValue of storageValues) {
+                if (storageValue && typeof storageValue === "object" && Array.isArray(storageValue["img"]) && storageValue["img"].length > 0) {
+                    return storageValue["img"][0];
+                }
+            }
+        }
+
+        return "";
+    };
     const [prices, setPrices] = useState({});
     const [pictures, setPictures] = useState({});
     const [picture_keys, setPictureKeys] = useState([]);
 
-    if (item["prices"] === null)
-    var basePrice = parseInt(item["price"])
+    const fallbackPrice = Number.parseInt(item["price"], 10);
+    if (item["prices"] == null || Object.keys(item["prices"]).length === 0)
+    var basePrice = Number.isNaN(fallbackPrice) ? 0 : fallbackPrice
     else
     basePrice = Math.min(...Object.values(item["prices"]))
 
@@ -30,57 +91,63 @@ function Item(props) {
 
 
 
-    const storageOrder = ['64 ГБ', '128 ГБ', '256 ГБ', '512 ГБ', '1 ТБ', '2 ТБ']
-    if (item["storage"] != null){
-        item["storage"] = storageOrder.reduce((acc, key) => {
-            if (item["storage"].hasOwnProperty(key)) {
-            acc[key] = item["storage"][key];
-            }
-            return acc;
-        }, {});
-    }
-
     useEffect(() => {
+        const nextPrices = {};
+        const nextPictures = {};
+        let nextPictureKeys = [];
+        const nextOption = {};
 
-        for (let i=0; i < Object.keys(item).length; i++){
-            if (typeof item[Object.keys(item)[i]] == "object" && item[Object.keys(item)[i]] != null && Object.keys(item)[i] != 'color' && Object.keys(item)[i] != 'static_img' && Object.keys(item)[i] != 'prices'){
-                var oldPrices = prices
-                oldPrices[Object.keys(item)[i]] = []
-                for (let j=0; j < Object.keys(item[Object.keys(item)[i]]).length; j++){
-                    var old = oldPrices[Object.keys(item)[i]]
-                    old.push({[Object.keys(item[Object.keys(item)[i]])[j]]: item[Object.keys(item)[i]][Object.keys(item[Object.keys(item)[i]])[j]]})
-                    oldPrices[Object.keys(item)[i]] = old
-                    if (Object.keys(oldPrices[Object.keys(item)[i]][0][Object.keys(oldPrices[Object.keys(item)[i]][0])[0]]["img"]).length != 0){
-                        setPictureKeys(oldPrices[Object.keys(item)[i]].map((val) => {
-                            return Object.keys(val)[0]
-                        }))
-                        var oldPics = pictures;
-                        oldPics[Object.keys(item[Object.keys(item)[i]])[j]] = oldPrices[Object.keys(item)[i]][j][Object.keys(oldPrices[Object.keys(item)[i]][j])[0]]["img"]
-                        setPictures(oldPics)
+        for (const field of Object.keys(item)) {
+            if (field === "color" || field === "static_img" || field === "prices") continue;
+
+            const fieldValue = item[field];
+            if (typeof fieldValue !== "object" || fieldValue == null || Array.isArray(fieldValue)) continue;
+
+            const optionRows = Object.keys(fieldValue).map((optionKey) => ({ [optionKey]: fieldValue[optionKey] }));
+            if (optionRows.length === 0) continue;
+
+            nextPrices[field] = optionRows;
+            nextOption[field] = Object.keys(optionRows[0])[0];
+
+            optionRows.forEach((entry) => {
+                const optionKey = Object.keys(entry)[0];
+                const optionValue = entry[optionKey];
+                const optionImages = optionValue && optionValue["img"];
+                if (Array.isArray(optionImages) && optionImages.length > 0) {
+                    nextPictures[optionKey] = optionImages;
+                    if (!nextPictureKeys.includes(optionKey)) {
+                        nextPictureKeys.push(optionKey);
                     }
                 }
-                var oldOption = option;
-                oldOption[Object.keys(item)[i]] = Object.keys(oldPrices[Object.keys(item)[i]][0])[0]
-                setOption(oldOption)
-                setPrices(oldPrices)    
-                
-            }
-            if (item["color"] != null){
-            if (Object.keys(item["color"])[0] === 'Варьируется'){
-                setPictureKeys(item["color"]['Варьируется'])
-            }
-            else{
-            setPictureKeys(Object.keys(item["color"]))
-            setPictures(item["color"])
-            }
-            }
-        if (item["static_img"] != null) setMode(1);
-        if (item["color"] != null){
-            if (Object.keys(item["color"])[0] === 'Варьируется') setMode(2);
-        };
+            });
         }
 
-    }, [option])
+        let nextMode = 0;
+        if (item["static_img"] != null) nextMode = 1;
+
+        if (item["color"] != null && typeof item["color"] === "object") {
+            const colorKeys = Object.keys(item["color"]);
+            if (colorKeys.length > 0) {
+                if (colorKeys[0] === "Варьируется") {
+                    nextPictureKeys = Array.isArray(item["color"]["Варьируется"]) ? item["color"]["Варьируется"] : [];
+                    nextMode = 2;
+                } else {
+                    nextPictureKeys = colorKeys;
+                    Object.keys(item["color"]).forEach((key) => {
+                        nextPictures[key] = item["color"][key];
+                    });
+                }
+            }
+        }
+
+        setPrices(nextPrices);
+        setPictures(nextPictures);
+        setPictureKeys(nextPictureKeys);
+        setOption(nextOption);
+        setMode(nextMode);
+        setPage(0);
+        setPrice(basePrice);
+    }, [item, basePrice])
 
     // console.log(prices, option)
     
@@ -88,21 +155,21 @@ function Item(props) {
     // console.log(prices["storage"])
 
     function handleOption(where, key){
-        // console.log(option)
-        var newOption = option
-        newOption[where] = Object.keys(key)[0]
+        const selectedKey = Object.keys(key)[0];
+        var newOption = { ...option }
+        newOption[where] = selectedKey
         setOption(newOption);
         var newPrice = basePrice
         if (item["color"] == null)
-        for (let i=0; i < Object.keys(option).length; i++){
-            if (Object.keys(item[Object.keys(option)[i]][option[Object.keys(option)[i]]]["img"]).length > 0){
-                setPage(picture_keys.indexOf(Object.keys(key)[0]) == -1 ? page : picture_keys.indexOf(Object.keys(key)[0]))
+        for (let i=0; i < Object.keys(newOption).length; i++){
+            if (item[Object.keys(newOption)[i]] && item[Object.keys(newOption)[i]][newOption[Object.keys(newOption)[i]]] && Object.keys(item[Object.keys(newOption)[i]][newOption[Object.keys(newOption)[i]]]["img"] || {}).length > 0){
+                setPage(picture_keys.indexOf(selectedKey) == -1 ? page : picture_keys.indexOf(selectedKey))
             }
         }
         else{
-            for (let i=0; i < Object.keys(option).length; i++){
-                if (Object.keys(item[Object.keys(option)[i]][option[Object.keys(option)[i]]]["img"]).length > 0 && Object.keys(item["color"])[0] != 'Варьируется'){
-                    setPage(picture_keys.indexOf(Object.keys(key)[0]))
+            for (let i=0; i < Object.keys(newOption).length; i++){
+                if (item[Object.keys(newOption)[i]] && item[Object.keys(newOption)[i]][newOption[Object.keys(newOption)[i]]] && Object.keys(item[Object.keys(newOption)[i]][newOption[Object.keys(newOption)[i]]]["img"] || {}).length > 0 && Object.keys(item["color"])[0] != 'Варьируется'){
+                    setPage(picture_keys.indexOf(selectedKey))
                 }
             }
         }
@@ -110,8 +177,8 @@ function Item(props) {
         if (item["prices"] !== null)
         for (let i=0; i<Object.keys(item["prices"]).length; i++){
             var flag = true;
-            for (let j=0; j<Object.values(option).length; j++){
-                if (!Object.keys(item["prices"])[i].slice(1, -1).replace(/'/g, "").split(', ').includes(Object.values(option)[j])){
+            for (let j=0; j<Object.values(newOption).length; j++){
+                if (!Object.keys(item["prices"])[i].slice(1, -1).replace(/'/g, "").split(', ').includes(Object.values(newOption)[j])){
                     flag = false;
                     // console.log("bruh", Object.keys(item["prices"])[i].slice(1, -1).replace(/'/g, "").split(', '), Object.values(option)[j])
                 } 
@@ -138,9 +205,13 @@ function Item(props) {
             args.push(Object.values(option)[i])
         }
         if (!args.includes(picture_keys[page])) args.push(picture_keys[page]);
-        if (mode === 0) var image = pictures[picture_keys[page]][0];
-        if (mode === 1) var image = item["static_img"][0];
-        if (mode === 2) var image = pictures[Object.values(option).filter(value => Object.keys(pictures).includes(value))][picture_keys[page]][0];
+        if (mode === 0) var image = pictures[picture_keys[page]] && pictures[picture_keys[page]][0];
+        if (mode === 1) var image = Array.isArray(item["static_img"]) ? item["static_img"][0] : undefined;
+        if (mode === 2) {
+            const selectedColor = Object.values(option).find(value => Object.keys(pictures).includes(value));
+            var image = selectedColor && pictures[selectedColor] && pictures[selectedColor][picture_keys[page]] && pictures[selectedColor][picture_keys[page]][0];
+        }
+        if (!image) image = getFirstImage();
         newCookie.push({"name": item["name"], "args": args, "img": image, "price": price})
         Cookies.set('cart', JSON.stringify(newCookie))
     }
@@ -164,6 +235,9 @@ function Item(props) {
     // console.log(page)
     // console.log(Object.keys(pictures).filter(value => Object.values(option).includes(value)))
     //  console.log(Object.keys(item["color"])[0] !== 'Варьируется')
+
+    const selectedPictureGroupKey = Object.values(option).find((value) => Object.keys(pictures).includes(value));
+    const mode2Pictures = selectedPictureGroupKey && pictures[selectedPictureGroupKey] ? pictures[selectedPictureGroupKey][picture_keys[page]] : null;
 
     return(
         <div className="item">
@@ -191,9 +265,9 @@ function Item(props) {
                     })}
                 </Slider>
             ) : 
-            ( pictures[Object.values(option).filter(value => Object.keys(pictures).includes(value))][picture_keys[page]] &&
+            ( mode2Pictures &&
                 <Slider {...settings} className="item-picture">
-                    {pictures[Object.values(option).filter(value => Object.keys(pictures).includes(value))][picture_keys[page]].map((pic) => {
+                    {mode2Pictures.map((pic) => {
                             // console.log(pic)
                             return (
                             <div>

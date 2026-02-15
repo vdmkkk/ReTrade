@@ -95,7 +95,7 @@ function AppMain() {
       <div className='featured'>
       <h1 className='featured-title-top'>Предзаказ</h1>
         <h1 className='featured-title'>Станьте обладателем новинок Apple  в числе первых.</h1>
-        <h2 className='featured-description'>iPhone 15 и 15 Pro.</h2>
+        <h2 className='featured-description'>iPhone 17 и 17 Pro.</h2>
         <div className='featured-button-wrapper'>
         <a href='#/preorder'><div className='featured-button'>
           <div className='featured-button-span'>

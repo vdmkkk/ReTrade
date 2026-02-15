@@ -910,18 +910,25 @@
   .item-picture{
     /* display: flex; */
     /* height: 100%; */
-    width: 72vw;
-    height: 80%;
+    width: 200px;
+    height: 200px;
     z-index: 1;
     object-fit: contain;
     margin-left: auto;
     margin-right: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
   
   .item-picture-img {
     /* width: 16vw;
     object-fit: contain; */
-    width: 72vw;
+    width: 200px;
+    height: 200px;
+    object-fit: contain;
+    object-position: center center;
+    display: block;
   }
   
   .slick-prev,
@@ -1299,11 +1306,14 @@
     display: flex;
     /* justify-content: space-between; */
     margin-bottom: 40px;
+    align-items: center;
   }
   
   .cart-item img {
-    width: 20%;
+    width: 200px;
+    height: 200px;
     object-fit: contain;
+    flex-shrink: 0;
   }
   
   .cart-item h3 {

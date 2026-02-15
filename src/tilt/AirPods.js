@@ -2,8 +2,7 @@ import HeaderComponent from '../Header';
 import FooterComponent from '../Footer';
 import HeaderTopComponent from '../HeaderTop';
 import Item from '../Item';
-import { useParams } from 'react-router-dom';
-import { useEffect, useState, componentWillReceiveProps } from 'react';
+import { useEffect, useState } from 'react';
 import axios from 'axios';
 import bag from '../img/bag.svg'
 import Cookies from 'js-cookie';
@@ -18,7 +17,12 @@ function AirPods() {
 
     const [isModalOpen, setIsModalOpen] = useState(false);
 
-    const [items, setItems] = useState([Cookies.get('cart') == undefined ? [] : JSON.parse(Cookies.get('cart'))])
+    const getCartItems = () => {
+      const cart = Cookies.get('cart');
+      return cart === undefined ? [] : JSON.parse(cart);
+    };
+
+    const [items, setItems] = useState(getCartItems())
 
     const handleModalOpen = () => {
       setIsModalOpen(true);
@@ -30,18 +34,9 @@ function AirPods() {
 
 
     useEffect(() => {
+      const apiUrl = 'http://89.169.3.47:53314/api/items/find/' + item.toString();
 
-      const apiUrl = 'http://92.118.114.90:53314/api/items/find/' + item.toString();
-      
-      console.log(Cookies.get('cart'))
-      if (Cookies.get('cart') == undefined) var v = [];
-      else var v = JSON.parse(Cookies.get('cart'));
-      if (v !== items){
-        setItems(Cookies.get('cart') == undefined ? [] : JSON.parse(Cookies.get('cart')))
-      }
-
-        if (data.length == 0){
-          axios.get(apiUrl)
+      axios.get(apiUrl)
       .then((response) => {
         var newData = response.data;
         setData(newData); // Update the component state with the fetched data
@@ -49,12 +44,11 @@ function AirPods() {
       .catch((error) => {
         console.error('Error fetching data:', error);
       });
+    }, [item])
 
-        }
-
-
-        
-    }, [items])
+    useEffect(() => {
+      setItems(getCartItems());
+    }, [isModalOpen])
 
     // console.log(data)
 

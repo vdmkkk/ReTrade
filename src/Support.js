@@ -73,7 +73,7 @@ return () => {
     onClose();
 
     try {
-      const response = await axios.post('http://92.118.114.90:53314/api/send-email', formData);
+      const response = await axios.post('http://89.169.3.47:53314/api/send-email', formData);
 
       if (response.status === 200) {
         setStatusMessage('Email sent successfully!');
