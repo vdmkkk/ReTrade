@@ -51,7 +51,7 @@ const FooterComponent = () => {
                 <img src={logo_white} className='footer-logo'/>
                 <div className='footer-phone-div'>
                     <img src={phone} className='footer-phone-icon'/>
-                    <a href='tel:+79254140444' className='footer-phone'>+7 (925) 414-04-44</a>
+                    <a href='tel:+79254140444' className='footer-phone'>+7 (925) 414-05-45</a>
                 </div>
                 </div>
                 <h4 className='footer-extra'>

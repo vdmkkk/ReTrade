@@ -22,7 +22,7 @@ const HeaderComponent = ({ openFullScreen }) => {
 
                     <a href='tel:+79254140444'><div className='header-phone-div'>
                       <img src={phone_black} className='header-phone-icon'/>
-                      <a  className='header-phone'>+7 (925) 414-04-44</a>
+                      <a  className='header-phone'>+7 (925) 414-05-45</a>
                     </div></a>
                 </div>
                 

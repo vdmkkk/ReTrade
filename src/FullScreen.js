@@ -26,7 +26,7 @@ const FullScreenWindow = ({ isOpen, onClose }) => {
         <div style={{"width": "95%", "marginLeft": "2.5%", "height": "1px", "backgroundColor": "#8f8f8f"}}></div>
         <div className='header-phone-div2'>
                       <img src={phone_black} className='header-phone-icon2'/>
-                      <a href='tel:+79254140444' style={{"textDecoration": "none"}} className='header-phone2'>+7 (925) 414-04-44</a>
+                      <a href='tel:+79254140444' style={{"textDecoration": "none"}} className='header-phone2'>+7 (925) 414-05-45</a>
         </div>
         <div style={{"display": "flex", "alignItems": "baseline", "gap": "5vw", "marginTop": "10px"}}>
         <a style={{"textDecoration": "none"}} href='https://wa.me/79254140444?text=' target='_blank'><div  className='header-social'>
